@@ -11,25 +11,47 @@ let messageList = [
     }
 ];
 
-function sendPrompt(newPrompt){
+async function sendPrompt(newPrompt){
     messageList.push({role:'user', content: newPrompt});
-    fetch(`${ollamaApi}`,{
+    
+    const response = await fetch(`${ollamaApi}`, {
         method: "POST",
-        body: {
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
             messages: messageList,
             model: model,
             stream: false
-        }
-    }).then(function(response){console.log(response)});
+        })
+    });
+    
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    const assistantMessage = data.message.content;
+    messageList.push({
+        role: 'assistant', 
+        content: assistantMessage
+    });
+    
+    return assistantMessage;
 }
 
-sendButton.addEventListener('click', async () =>{
+sendButton.addEventListener('click', async () => {
     let newPrompt = prompt.value.trim();
     if (!newPrompt) return;
-    response.innerHTML = '';
 
-    try { const agentResponse = sendPrompt(newPrompt);
-    response.innerHTML = marked.parse(agentResponse);} catch (error){
-        response.innerHTML = error.message
+    prompt.value = '';
+    
+    response.innerHTML = 'Thinking...';
+
+    try { 
+        const agentResponse = await sendPrompt(newPrompt);
+        response.innerHTML = marked.parse(agentResponse);
+    } catch (error) {
+        response.innerHTML = `Error: ${error.message}`;
     }
 });

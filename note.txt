@@ -35,3 +35,26 @@ https://ollama.utahtech.dev/api/chat
     "eval_duration": 2004088583
 }
 
+
+
+// Keep conversation under a certain length
+if (messageList.length > 30) {
+    // Keep system message + last 28 messages
+    messageList = [messageList[0], ...messageList.slice(-28)];
+}
+
+// Maintain separate game state object
+const gameState = {
+    location: "Tortuga Tavern",
+    inventory: ["rusty sword", "gold coins: 50"],
+    health: 100,
+    relationships: {"Blackbeard": "friendly", "Navy": "hostile"},
+    questProgress: "searching for treasure map"
+};
+
+// Include current state in system prompt instead of full history
+const systemPrompt = `You are a pirate captain. Current game state:
+Location: ${gameState.location}
+Inventory: ${gameState.inventory.join(', ')}
+Health: ${gameState.health}
+...continue adventure from here.`;

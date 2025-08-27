@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Pirate Captain Agent</title>
+    <title>🏴‍☠️ Pirate Adventure Game</title>
     <style>
         body { 
             font-family: Arial, sans-serif; 
@@ -42,38 +42,92 @@
             background-color: #ccc; 
             cursor: not-allowed;
         }
-        #response { 
+        #conversationHistory { 
             background-color: white; 
             padding: 20px; 
             border-radius: 5px; 
             border: 1px solid #ddd;
-            min-height: 200px;
-            white-space: pre-wrap;
+            min-height: 400px;
+            max-height: 600px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .user-message { 
+            background-color: #e3f2fd; 
+            border-left: 4px solid #2196F3;
+        }
+        .assistant-message { 
+            background-color: #f3e5f5; 
+            border-left: 4px solid #9C27B0;
+        }
+        .message-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .user-message .message-header {
+            color: #1976D2;
+        }
+        .assistant-message .message-header {
+            color: #7B1FA2;
+        }
+        .thinking-message {
+            background-color: #fff3e0;
+            border-left: 4px solid #FF9800;
+            font-style: italic;
+            color: #666;
+        }
+        #gameStatus {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        #gameStatus h3 {
+            margin-top: 0;
+            color: #f39c12;
+        }
+        .status-section {
+            margin-bottom: 10px;
         }
         .conversation { 
             margin-bottom: 20px; 
         }
-        .user-message { 
-            background-color: #e3f2fd; 
-            padding: 10px; 
-            border-radius: 5px; 
-            margin-bottom: 10px;
-        }
-        .assistant-message { 
-            background-color: #f3e5f5; 
-            padding: 10px; 
-            border-radius: 5px;
-        }
     </style>
 </head>
 <body>
-    <h1>🏴‍☠️ AI Pirate Captain Agent</h1>
+    <h1>🏴‍☠️ Pirate Adventure: Captain Redbeard's Quest</h1>
+    <div id="gameStatus">
+        <h3>⚓ Game Status</h3>
+        <div class="status-section">
+            <strong>Player:</strong> <span id="playerStats">Health: 100/100 | Gold: 25 | Location: Port Haven</span>
+        </div>
+        <div class="status-section">
+            <strong>Inventory:</strong> <span id="playerInventory">rusty cutlass, leather boots, torn map fragment, bottle of rum</span>
+        </div>
+        <div class="status-section">
+            <strong>Ship:</strong> <span id="shipStatus">No ship owned</span>
+        </div>
+        <div class="status-section">
+            <strong>Objectives:</strong> <span id="currentObjectives">Find a way to acquire a ship, Explore Port Haven</span>
+        </div>
+    </div>
     <div id="inputs">
-        <textarea id="prompt" placeholder="Ask the pirate captain for directions, orders, or anything else..."></textarea>
+        <textarea id="prompt" placeholder="What do you do next, Captain?"></textarea>
         <button id="sendButton">Send Message ⚓</button>
     </div>
-    <div id="response">
-        <p><em>Ready to receive your commands, landlubber! Ask me anything...</em></p>
+    <div id="conversationHistory">
+        <div class="message assistant-message">
+            <div class="message-header">🏴‍☠️ Narrator</div>
+            <div><em>Welcome, Captain Redbeard! Your adventure begins now. What would you like to do first?</em></div>
+        </div>
     </div>
 </body>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>

@@ -4,10 +4,8 @@ let prompt = document.querySelector('#prompt');
 let sendButton = document.querySelector('#sendButton');
 let conversationHistory = document.querySelector('#conversationHistory');
 
-// Conversation history for display (separate from messageList for AI)
 let displayHistory = [];
 
-// Game State
 let gameState = {
     player: {
         name: "Captain Redbeard",
@@ -15,10 +13,28 @@ let gameState = {
         maxHealth: 100,
         gold: 25,
         location: "Port Haven",
+        subLocation: "town square", 
         inventory: ["rusty cutlass", "leather boots", "torn map fragment", "bottle of rum"]
     },
     story: {
-        currentObjectives: ["Find a way to acquire a ship", "Explore Port Haven"],
+        currentObjectives: [
+            {
+                id: "acquire_ship",
+                title: "Find a way to acquire a ship",
+                description: "You need a ship to sail to other locations and begin your pirate adventures",
+                promisedReward: null,
+                giver: null,
+                location: "Port Haven"
+            },
+            {
+                id: "explore_port_haven", 
+                title: "Explore Port Haven",
+                description: "Get familiar with the island settlement and its inhabitants",
+                promisedReward: "Knowledge of the area",
+                giver: null,
+                location: "Port Haven"
+            }
+        ],
         knownLocations: ["Port Haven"],
         completedObjectives: []
     },
@@ -46,20 +62,19 @@ let gameState = {
     }
 };
 
-// Function to build dynamic system prompt with current game state
 function buildSystemPrompt() {
     const playerStatus = `
 PLAYER STATUS:
 - Name: ${gameState.player.name}
 - Health: ${gameState.player.health}/${gameState.player.maxHealth}
 - Gold: ${gameState.player.gold} pieces
-- Current Location: ${gameState.player.location}
+- Current Location: ${gameState.player.location}${gameState.player.subLocation ? ` (${gameState.player.subLocation})` : ''}
 - Inventory: ${gameState.player.inventory.join(', ')}
 
 STORY PROGRESS:
-- Current Objectives: ${gameState.story.currentObjectives.join(', ')}
+- Current Objectives: ${gameState.story.currentObjectives.map(obj => `${obj.title}${obj.promisedReward ? ` (Reward: ${obj.promisedReward})` : ''}`).join(', ')}
 - Known Locations: ${gameState.story.knownLocations.join(', ')}
-- Completed Objectives: ${gameState.story.completedObjectives.join(', ')}
+- Completed Objectives: ${gameState.story.completedObjectives.map(obj => `${obj.title} (${obj.actualReward || 'No reward tracked'})`).join(', ')}
 
 CURRENT LOCATION (${gameState.player.location}):
 - Type: ${gameState.locations[gameState.player.location].type}
@@ -78,7 +93,7 @@ ${gameState.ship.hasShip ?
     '- No ship currently owned (must acquire one to sail to other locations)'
 }`;
 
-    return `You are the narrator of an epic pirate adventure game. The player is Captain Redbeard, starting their adventure on a small island. You describe scenes vividly, present meaningful choices, and respond to player actions with exciting consequences.
+    return `You are the narrator of an epic pirate adventure game. The player is Captain Redbeard, starting their adventure on a small island. You describe scenes vividly, present meaningful choices, and respond to player actions with exciting consequences. Require smart decision making and resource management. The life of a pirate is dangerous the wrong decision or a lack of preparedness can lead to dificulty or great peril.
 
 ${playerStatus}
 
@@ -98,9 +113,10 @@ health: +5 or -10 (for health changes)
 gold: +50 or -25 (for gold changes)
 inventory_add: item name (to add items)
 inventory_remove: item name (to remove items)
-location: new location name (when player moves)
-objective_add: new objective description (for new quests)
-objective_complete: completed objective description (when quest finished)
+location: new location name (when player moves to different island/area)
+sublocation: area name (when moving within current location, e.g., tavern, dock, market)
+objective_add: quest_id|title|description|promised_reward|giver|location (for new quests)
+objective_complete: quest_id|actual_reward (when quest finished, record what was actually received)
 location_discover: location name (when new places are learned about)
 ship_acquire: ship_type|ship_name|crew|hull|cannons|sails (when getting a ship)
 [/GAME_UPDATE]
@@ -110,7 +126,6 @@ Only include the [GAME_UPDATE] section if changes actually occur. Do not include
 Respond to player actions with immersive narrative and present the next choices.`;
 }
 
-// Function to parse structured game state updates from AI response
 function parseGameStateUpdates(aiResponse) {
     const updateMatch = aiResponse.match(/\[GAME_UPDATE\](.*?)\[\/GAME_UPDATE\]/s);
     if (!updateMatch) return;
@@ -160,33 +175,79 @@ function parseGameStateUpdates(aiResponse) {
             case 'location':
                 if (gameState.story.knownLocations.includes(value)) {
                     gameState.player.location = value;
+                    gameState.player.subLocation = null;
                     stateChanged = true;
                     console.log(`Moved to: ${value}`);
                 }
                 break;
                 
+            case 'sublocation':
+                gameState.player.subLocation = value;
+                stateChanged = true;
+                console.log(`Entered: ${value} in ${gameState.player.location}`);
+                break;
+                
             case 'objective_add':
-                if (!gameState.story.currentObjectives.includes(value)) {
-                    gameState.story.currentObjectives.push(value);
+                const questData = value.split('|');
+                if (questData.length >= 2) {
+                    const newQuest = {
+                        id: questData[0] || `quest_${Date.now()}`,
+                        title: questData[1] || value,
+                        description: questData[2] || questData[1],
+                        promisedReward: questData[3] || null,
+                        giver: questData[4] || null,
+                        location: questData[5] || gameState.player.location
+                    };
+                    
+                    if (!gameState.story.currentObjectives.find(obj => obj.id === newQuest.id)) {
+                        gameState.story.currentObjectives.push(newQuest);
+                        stateChanged = true;
+                        console.log(`New objective: ${newQuest.title} (Reward: ${newQuest.promisedReward || 'Unknown'})`);
+                    }
+                } else {
+                    const simpleQuest = {
+                        id: `quest_${Date.now()}`,
+                        title: value,
+                        description: value,
+                        promisedReward: null,
+                        giver: null,
+                        location: gameState.player.location
+                    };
+                    gameState.story.currentObjectives.push(simpleQuest);
                     stateChanged = true;
                     console.log(`New objective: ${value}`);
                 }
                 break;
                 
             case 'objective_complete':
-                const objIndex = gameState.story.currentObjectives.indexOf(value);
-                if (objIndex > -1) {
-                    gameState.story.currentObjectives.splice(objIndex, 1);
-                    gameState.story.completedObjectives.push(value);
+                const completeData = value.split('|');
+                const questId = completeData[0];
+                const actualReward = completeData[1] || 'No reward';
+                
+                const questIndex = gameState.story.currentObjectives.findIndex(obj => 
+                    obj.id === questId || obj.title === questId || obj.title === value
+                );
+                
+                if (questIndex > -1) {
+                    const completedQuest = gameState.story.currentObjectives[questIndex];
+                    completedQuest.actualReward = actualReward;
+                    completedQuest.completedAt = new Date().toISOString();
+                    
+                    gameState.story.currentObjectives.splice(questIndex, 1);
+                    gameState.story.completedObjectives.push(completedQuest);
                     stateChanged = true;
-                    console.log(`Objective completed: ${value}`);
+                    
+                    const rewardNote = completedQuest.promisedReward !== actualReward ? 
+                        ` (Promised: ${completedQuest.promisedReward}, Received: ${actualReward})` : 
+                        ` (Received: ${actualReward})`;
+                    
+                    console.log(`Objective completed: ${completedQuest.title}${rewardNote}`);
                 }
                 break;
                 
             case 'location_discover':
                 if (!gameState.story.knownLocations.includes(value)) {
                     gameState.story.knownLocations.push(value);
-                    // Add basic location data if not exists
                     if (!gameState.locations[value]) {
                         gameState.locations[value] = {
                             type: "unknown",
@@ -227,7 +288,6 @@ function parseGameStateUpdates(aiResponse) {
     return stateChanged;
 }
 
-// Function to add message to conversation display
 function addMessageToDisplay(content, isUser = false) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
@@ -243,21 +303,16 @@ function addMessageToDisplay(content, isUser = false) {
     messageDiv.appendChild(contentDiv);
     
     conversationHistory.appendChild(messageDiv);
-    
-    // Keep only last 20 messages in display (10 exchanges)
+
     const messages = conversationHistory.querySelectorAll('.message');
-    if (messages.length > 21) { // Keep welcome + 20 messages
-        // Remove oldest messages but keep the welcome message
+    if (messages.length > 21) {
         for (let i = 1; i <= messages.length - 21; i++) {
             messages[i].remove();
         }
     }
-    
-    // Scroll to bottom
     conversationHistory.scrollTop = conversationHistory.scrollHeight;
 }
 
-// Function to show thinking message
 function showThinking() {
     const thinkingDiv = document.createElement('div');
     thinkingDiv.className = 'message thinking-message';
@@ -277,7 +332,6 @@ function showThinking() {
     conversationHistory.scrollTop = conversationHistory.scrollHeight;
 }
 
-// Function to remove thinking message
 function removeThinking() {
     const thinking = document.getElementById('thinking');
     if (thinking) {
@@ -285,17 +339,17 @@ function removeThinking() {
     }
 }
 
-// Function to update the visual game state display
 function updateGameStateDisplay() {
-    // Update player stats
+    const locationDisplay = gameState.player.subLocation 
+        ? `${gameState.player.location} (${gameState.player.subLocation})`
+        : gameState.player.location;
+        
     document.getElementById('playerStats').textContent = 
-        `Health: ${gameState.player.health}/${gameState.player.maxHealth} | Gold: ${gameState.player.gold} | Location: ${gameState.player.location}`;
+        `Health: ${gameState.player.health}/${gameState.player.maxHealth} | Gold: ${gameState.player.gold} | Location: ${locationDisplay}`;
     
-    // Update inventory
     document.getElementById('playerInventory').textContent = 
         gameState.player.inventory.join(', ') || 'Empty';
     
-    // Update ship status
     const shipStatusElement = document.getElementById('shipStatus');
     if (gameState.ship.hasShip) {
         shipStatusElement.textContent = 
@@ -304,9 +358,15 @@ function updateGameStateDisplay() {
         shipStatusElement.textContent = 'No ship owned';
     }
     
-    // Update objectives
+    const objectiveTexts = gameState.story.currentObjectives.map(obj => {
+        let text = obj.title || obj;
+        if (typeof obj === 'object' && obj.promisedReward) {
+            text += ` (${obj.promisedReward})`;
+        }
+        return text;
+    });
     document.getElementById('currentObjectives').textContent = 
-        gameState.story.currentObjectives.join(', ') || 'No current objectives';
+        objectiveTexts.join(', ') || 'No current objectives';
 }
 
 let messageList = [
@@ -318,16 +378,14 @@ let messageList = [
 
 async function sendPrompt(newPrompt){
     messageList.push({role:'user', content: newPrompt});
-    
-    // Trim message list if it gets too long (keep system prompt + last 10 messages)
-    if (messageList.length > 12) { // system + 10 messages + buffer
+
+    if (messageList.length > 12) {
         const systemPrompt = messageList[0];
-        const recentMessages = messageList.slice(-10); // Keep last 10 messages
+        const recentMessages = messageList.slice(-10);
         messageList = [systemPrompt, ...recentMessages];
         console.log('Message history trimmed to maintain performance');
     }
     
-    // Update system prompt every few messages to reflect current game state
     if (messageList.length > 1 && (messageList.length - 1) % 5 === 0) {
         messageList[0].content = buildSystemPrompt();
     }
@@ -355,13 +413,10 @@ async function sendPrompt(newPrompt){
         content: assistantMessage
     });
     
-    // Parse the response for game state updates
     const stateChanged = parseGameStateUpdates(assistantMessage);
-    
-    // Remove the [GAME_UPDATE] section from the displayed response
+
     const cleanResponse = assistantMessage.replace(/\[GAME_UPDATE\].*?\[\/GAME_UPDATE\]/s, '').trim();
-    
-    // Update system prompt immediately if state changed significantly
+
     if (stateChanged) {
         messageList[0].content = buildSystemPrompt();
     }
@@ -373,23 +428,18 @@ sendButton.addEventListener('click', async () => {
     let newPrompt = prompt.value.trim();
     if (!newPrompt) return;
 
-    // Add user message to display
     addMessageToDisplay(newPrompt, true);
-    
-    // Clear the input
+
     prompt.value = '';
-    
-    // Show thinking message
+
     showThinking();
 
     try { 
         const agentResponse = await sendPrompt(newPrompt);
-        
-        // Remove thinking message and add AI response
+
         removeThinking();
         addMessageToDisplay(agentResponse, false);
-        
-        // Update the visual game state display
+
         updateGameStateDisplay();
         
     } catch (error) {
@@ -398,7 +448,6 @@ sendButton.addEventListener('click', async () => {
     }
 });
 
-// Allow Enter key to send message (Shift+Enter for new line)
 prompt.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -406,7 +455,6 @@ prompt.addEventListener('keydown', (e) => {
     }
 });
 
-// Initialize the display when page loads
 document.addEventListener('DOMContentLoaded', () => {
     updateGameStateDisplay();
 });

@@ -29,7 +29,7 @@ sendButton.addEventListener('click', async () =>{
     response.innerHTML = '';
 
     try { const agentResponse = sendPrompt(newPrompt);
-    response.innerHTML = marked.parse(reply);} catch (error){
+    response.innerHTML = marked.parse(agentResponse);} catch (error){
         response.innerHTML = error.message
     }
 });

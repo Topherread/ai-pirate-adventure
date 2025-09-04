@@ -1,5 +1,4 @@
-const ollamaApi = "https://ollama.utahtech.dev/api/chat";
-const model = "gpt-oss:120b";
+const ollamaApi = "https://turbo-bassoon-p4r74v49g55cr97g-3001.app.github.dev/api/chat";const model = "gpt-oss:120b";
 let prompt = document.querySelector('#prompt');
 let sendButton = document.querySelector('#sendButton');
 let conversationHistory = document.querySelector('#conversationHistory');
@@ -14,7 +13,7 @@ let gameState = {
         gold: 25,
         location: "Port Haven",
         subLocation: "town square", 
-        inventory: ["rusty cutlass", "leather boots", "torn map fragment", "bottle of rum"]
+        inventory: ["rusty cutlass", "leather boots", "linen shirt", "cotton trousers", "bandana", "torn map fragment"]
     },
     story: {
         currentObjectives: [
@@ -93,7 +92,7 @@ ${gameState.ship.hasShip ?
     '- No ship currently owned (must acquire one to sail to other locations)'
 }`;
 
-    return `You are the narrator of an epic pirate adventure game. The player is Captain Redbeard, starting their adventure on a small island. You describe scenes vividly, present meaningful choices, and respond to player actions with exciting consequences. Require smart decision making and resource management. The life of a pirate is dangerous the wrong decision or a lack of preparedness can lead to dificulty or great peril.
+    return `You are the narrator of an epic pirate adventure game. The player is Captain Redbeard, starting their adventure on a small island. You describe scenes vividly, present meaningful choices, and respond to player actions with exciting consequences. Require smart decision making and resource management. The life of a pirate is dangerous the wrong decision or a lack of preparedness can lead to dificulty or great peril. Keep responses detailed but concise only 1-2 short paragraphs. 
 
 ${playerStatus}
 

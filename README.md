@@ -23,5 +23,11 @@ Visit `http://localhost:3001`
 | POST | `/api/chat` | Send player action, receive AI response | `{ messages: Array, model: String }` |
 
 
-## UI
+## UI before adventure
+
+![Pirate Adventure Game Screenshot](images/Screenshot%202025-09-04%20at%207.59.54%20PM.png)
+
+## UI after losing health, gold, bandana, and claiming a ship 
+
+![UI screenshot](images/Screenshot 2025-09-04 at 8.05.29 PM.png)
 

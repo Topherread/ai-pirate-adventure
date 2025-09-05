@@ -1,4 +1,4 @@
-const ollamaApi = "https://turbo-bassoon-p4r74v49g55cr97g-3001.app.github.dev/api/chat";const model = "gpt-oss:120b";
+const ollamaApi = "http://localhost:3001/api/chat";const model = "gpt-oss:120b";
 let prompt = document.querySelector('#prompt');
 let sendButton = document.querySelector('#sendButton');
 let conversationHistory = document.querySelector('#conversationHistory');

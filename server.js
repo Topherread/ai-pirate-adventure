@@ -25,12 +25,7 @@ app.post('/api/chat', async (req, res) => {
             stream: false
         });
 
-        if (!ollamaResponse.ok) {
-            throw new Error(`Ollama API error: ${ollamaResponse.status}`);
-        }
-
-        const data = await ollamaResponse.json();
-        res.json(data);
+        res.json(ollamaResponse);
     } catch (error) {
         console.error('API Error:', error);
         res.status(500).json({ error: 'Internal server error' });

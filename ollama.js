@@ -128,7 +128,6 @@ Respond to player actions with immersive narrative and present the next choices.
 function parseGameStateUpdates(aiResponse) {
     const updateMatch = aiResponse.match(/\[GAME_UPDATE\](.*?)\[\/GAME_UPDATE\]/s);
     if (!updateMatch) return;
-    
     const updates = updateMatch[1].trim().split('\n');
     let stateChanged = false;
     

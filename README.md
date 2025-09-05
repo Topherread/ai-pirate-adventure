@@ -25,9 +25,9 @@ Visit `http://localhost:3001`
 
 ## UI before adventure
 
-![Pirate Adventure Game Screenshot](images/Screenshot%202025-09-04%20at%207.59.54%20PM.png)
+![Pirate Adventure Game Screenshot](images/before.png)
 
 ## UI after losing health, gold, bandana, and claiming a ship 
 
-![UI screenshot](images/Screenshot 2025-09-04 at 8.05.29 PM.png)
+![UI screenshot](images/after.png)
 
